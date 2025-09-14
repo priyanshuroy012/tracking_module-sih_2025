@@ -1,45 +1,38 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
+
+class Bus(Base):
+    __tablename__ = "buses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    lat = Column(Float)
+    lon = Column(Float)
+    speed = Column(Float, default=0)
+
+    trips = relationship("Trip", back_populates="bus")
+
+class Trip(Base):
+    __tablename__ = "trips"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bus_id = Column(Integer, ForeignKey("buses.id"))
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+
+    bus = relationship("Bus", back_populates="trips")
+    gps_points = relationship("GPSPoint", back_populates="trip")
 
 class GPSPoint(Base):
     __tablename__ = "gps_points"
 
     id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(String, index=True)
+    trip_id = Column(Integer, ForeignKey("trips.id"))
     lat = Column(Float)
     lon = Column(Float)
     speed = Column(Float)
-    ts = Column(DateTime, default=datetime.utcnow)
-    raw_flag = Column(Boolean, default=False)  # True if anomaly
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
-class Anomaly(Base):
-    __tablename__ = "anomalies"
-
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(String)
-    ts = Column(DateTime, default=datetime.utcnow)
-    reason = Column(String)
-    payload = Column(String)
-
-class Challan(Base):
-    __tablename__ = "challans"
-
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(String)
-    ts = Column(DateTime, default=datetime.utcnow)
-    speed = Column(Float)
-    speed_limit = Column(Float)
-    location = Column(String)
-    paid = Column(Boolean, default=False)
-
-class SOSAlert(Base):
-    __tablename__ = "sos_alerts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(String)
-    ts = Column(DateTime, default=datetime.utcnow)
-    lat = Column(Float)
-    lon = Column(Float)
-    status = Column(String, default="active")
+    trip = relationship("Trip", back_populates="gps_points")
